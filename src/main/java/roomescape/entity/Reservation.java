@@ -24,5 +24,9 @@ public class Reservation {
     reservation.setId(id);
     return reservation;
   }
+
+  public boolean isEmpty() {
+    return name == null || date == null || time == null || name.isEmpty() || date.isEmpty() || time.isEmpty();
+  }
 }
 
