@@ -1,5 +1,5 @@
 package roomescape.service;
 
-public class ScheduleService {
+public class TimeService {
 
 }

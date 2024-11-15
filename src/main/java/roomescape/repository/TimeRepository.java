@@ -1,5 +1,5 @@
 package roomescape.repository;
 
-public class ScheduleRepository {
+public class TimeRepository {
 
 }

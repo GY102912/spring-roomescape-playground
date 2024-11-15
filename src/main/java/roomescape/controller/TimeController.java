@@ -21,32 +21,31 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
-import roomescape.dto.RequestScheduleDTO;
-import roomescape.dto.ResponseScheduleDTO;
+import roomescape.entity.Time;
 
 @Controller
-public class ScheduleController {
+public class TimeController {
 
   @Autowired
   JdbcTemplate jdbcTemplate;
 
-  private final RowMapper<ResponseScheduleDTO> rowMapper = (rs, rowNum) ->
-    ResponseScheduleDTO.createResponseTimeDTO(rs.getLong("id"), rs.getString("time"));
+  private final RowMapper<Time> rowMapper = (rs, rowNum) ->
+    Time.create(rs.getLong("id"), rs.getString("value"));
 
   @GetMapping("/times")
   @ResponseBody
-  public ResponseEntity<List<ResponseScheduleDTO>> getAllSchedules() {
-    String selectSql = "select * from schedule";
-    List<ResponseScheduleDTO> schedules = jdbcTemplate.query(selectSql, rowMapper);
-    return new ResponseEntity<>(schedules, HttpStatus.OK);
+  public ResponseEntity<List<Time>> getAllTimes() {
+    String selectSql = "select * from time";
+    List<Time> times = jdbcTemplate.query(selectSql, rowMapper);
+    return new ResponseEntity<>(times, HttpStatus.OK);
   }
 
   @PostMapping("/times")
   @ResponseBody
-  public ResponseEntity<ResponseScheduleDTO> createSchedule(@RequestBody @Valid RequestScheduleDTO request) {
+  public ResponseEntity<Time> createTime(@RequestBody @Valid Time request) {
     KeyHolder keyHolder = new GeneratedKeyHolder();
 
-    String insertSql = "INSERT INTO schedule (time) VALUES (?)";
+    String insertSql = "INSERT INTO time (time) VALUES (?)";
     jdbcTemplate.update((connection) -> {
       PreparedStatement ps = connection.prepareStatement(insertSql, new String[]{"id"});
       ps.setString(1, request.getTime());
@@ -54,17 +53,17 @@ public class ScheduleController {
     }, keyHolder);
 
     Long generatedId = keyHolder.getKey().longValue();
-    ResponseScheduleDTO response = ResponseScheduleDTO.createResponseTimeDTO(generatedId, request.getTime());
+    Time response = Time.create(generatedId, request.getTime());
     URI location = URI.create("/times/" + generatedId);
     return ResponseEntity.created(location).body(response);
   }
 
-  @DeleteMapping("/times/{scheduleId}")
+  @DeleteMapping("/times/{timeId}")
   @ResponseBody
-  public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
-    String deleteSql = "DELETE FROM schedule WHERE id = ?";
+  public ResponseEntity<Void> deleteTime(@PathVariable Long timeId) {
+    String deleteSql = "DELETE FROM time WHERE id = ?";
 
-    int rowsAffected = jdbcTemplate.update(deleteSql, scheduleId);
+    int rowsAffected = jdbcTemplate.update(deleteSql, timeId);
     if (rowsAffected == 0) {
       throw new NoSuchElementException();
     }
