@@ -1,6 +1,7 @@
 package roomescape.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,8 +10,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-@NoArgsConstructor
-public class Reservation {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class ReservationDTO {
   private long id;
 
   @NotBlank
@@ -22,7 +23,7 @@ public class Reservation {
   @NotBlank
   private String time;
 
-  public Reservation(String name, String date, String time) {
+  public ReservationDTO(String name, String date, String time) {
     this.name = name;
     this.date = date;
     this.time = time;

@@ -21,71 +21,53 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import roomescape.dto.ReservationDTO;
-import roomescape.exception.NotFoundReservationException;
+import roomescape.dto.RequestScheduleDTO;
+import roomescape.dto.ResponseScheduleDTO;
 
 @Controller
-public class ReservationController {
+public class ScheduleController {
 
   @Autowired
   JdbcTemplate jdbcTemplate;
 
-  private final RowMapper<ReservationDTO> rowMapper = (resultSet, rowNum) ->
-      new ReservationDTO(
-          resultSet.getLong("id"),
-          resultSet.getString("name"),
-          resultSet.getString("date"),
-          resultSet.getString("time")
-  );
+  private final RowMapper<ResponseScheduleDTO> rowMapper = (rs, rowNum) ->
+    ResponseScheduleDTO.createResponseTimeDTO(rs.getLong("id"), rs.getString("time"));
 
-  @GetMapping("/")
-  public String home() {
-    return "home";
-  }
-
-  @GetMapping("/reservation")
-  public String reservation() {
-    return "reservation";
-  }
-
-  @GetMapping("/reservations")
+  @GetMapping("/times")
   @ResponseBody
-  public List<ReservationDTO> findAll() {
-    return jdbcTemplate.query("select id, name, date, time from reservation", rowMapper);
+  public ResponseEntity<List<ResponseScheduleDTO>> getAllSchedules() {
+    String selectSql = "select * from schedule";
+    List<ResponseScheduleDTO> schedules = jdbcTemplate.query(selectSql, rowMapper);
+    return new ResponseEntity<>(schedules, HttpStatus.OK);
   }
 
-  @PostMapping("/reservations")
+  @PostMapping("/times")
   @ResponseBody
-  public ResponseEntity<ReservationDTO> create(@RequestBody @Valid ReservationDTO reservationDTO) {
-
+  public ResponseEntity<ResponseScheduleDTO> createSchedule(@RequestBody @Valid RequestScheduleDTO request) {
     KeyHolder keyHolder = new GeneratedKeyHolder();
 
-    String insertSql = "INSERT INTO reservation (name, date, time) VALUES (?, ?, ?)";
-    jdbcTemplate.update(connection -> {
+    String insertSql = "INSERT INTO schedule (time) VALUES (?)";
+    jdbcTemplate.update((connection) -> {
       PreparedStatement ps = connection.prepareStatement(insertSql, new String[]{"id"});
-      ps.setString(1, reservationDTO.getName());
-      ps.setString(2, reservationDTO.getDate());
-      ps.setString(3, reservationDTO.getTime());
+      ps.setString(1, request.getTime());
       return ps;
     }, keyHolder);
 
     Long generatedId = keyHolder.getKey().longValue();
-    reservationDTO.setId(generatedId);
-
-    URI location = URI.create("/reservations/" + generatedId);
-
-    return ResponseEntity.created(location).body(reservationDTO);
+    ResponseScheduleDTO response = ResponseScheduleDTO.createResponseTimeDTO(generatedId, request.getTime());
+    URI location = URI.create("/times/" + generatedId);
+    return ResponseEntity.created(location).body(response);
   }
 
-  @DeleteMapping("/reservations/{id}")
-  public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
-    int rowsAffected = jdbcTemplate.update("delete from reservation where id = ?", id);
+  @DeleteMapping("/times/{scheduleId}")
+  @ResponseBody
+  public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
+    String deleteSql = "DELETE FROM schedule WHERE id = ?";
 
+    int rowsAffected = jdbcTemplate.update(deleteSql, scheduleId);
     if (rowsAffected == 0) {
       throw new NoSuchElementException();
     }
-
     return ResponseEntity.noContent().build();
   }
 
